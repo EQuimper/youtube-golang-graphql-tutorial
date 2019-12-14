@@ -7,6 +7,7 @@ import (
 	"errors"
 
 	"github.com/equimper/meetmeup/models"
+	"github.com/equimper/meetmeup/postgres"
 )
 
 var meetups = []*models.Meetup{
@@ -24,20 +25,9 @@ var meetups = []*models.Meetup{
 	},
 }
 
-var users = []*models.User{
-	{
-		ID:       "1",
-		Username: "Bob",
-		Email:    "bob@gmail.com",
-	},
-	{
-		ID:       "2",
-		Username: "Jon",
-		Email:    "jon@gmail.com",
-	},
-}
-
 type Resolver struct {
+	MeetupsRepo postgres.MeetupsRepo
+	UsersRepo   postgres.UsersRepo
 }
 
 func (r *Resolver) Query() QueryResolver {
@@ -55,20 +45,7 @@ type mutationResolver struct{ *Resolver }
 type meetupResolver struct{ *Resolver }
 
 func (m *meetupResolver) User(ctx context.Context, obj *models.Meetup) (*models.User, error) {
-	user := new(models.User)
-
-	for _, u := range users {
-		if u.ID == obj.UserID {
-			user = u
-			break
-		}
-	}
-
-	if user == nil {
-		return nil, errors.New("user with id not exist")
-	}
-
-	return user, nil
+	return m.UsersRepo.GetUserByID(obj.UserID)
 }
 
 func (r *Resolver) Meetup() MeetupResolver {
@@ -94,9 +71,23 @@ func (u *userResolver) Meetups(ctx context.Context, obj *models.User) ([]*models
 }
 
 func (m *mutationResolver) CreateMeetup(ctx context.Context, input NewMeetup) (*models.Meetup, error) {
-	panic("implement me")
+	if len(input.Name) < 3 {
+		return nil, errors.New("name not long enough")
+	}
+
+	if len(input.Description) < 3 {
+		return nil, errors.New("description not long enough")
+	}
+
+	meetup := &models.Meetup{
+		Name:        input.Name,
+		Description: input.Description,
+		UserID:      "1",
+	}
+
+	return m.MeetupsRepo.CreateMeetup(meetup)
 }
 
 func (r *queryResolver) Meetups(ctx context.Context) ([]*models.Meetup, error) {
-	return meetups, nil
+	return r.MeetupsRepo.GetMeetups()
 }
