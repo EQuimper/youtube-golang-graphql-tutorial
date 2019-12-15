@@ -22,7 +22,23 @@ func DataloaderMiddleware(db *pg.DB, next http.Handler) http.Handler {
 
 				err := db.Model(&users).Where("id in (?)", pg.In(ids)).Select()
 
-				return users, []error{err}
+				if err != nil {
+					return nil, []error{err}
+				}
+
+				u := make(map[string]*models.User, len(users))
+
+				for _, user := range users {
+					u[user.ID] = user
+				}
+
+				result := make([]*models.User, len(ids))
+
+				for i, id := range ids {
+					result[i] = u[id]
+				}
+
+				return result, nil
 			},
 		}
 
