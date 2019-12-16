@@ -12,6 +12,10 @@ func (r *Resolver) Query() QueryResolver {
 
 type queryResolver struct{ *Resolver }
 
+func (r *queryResolver) User(ctx context.Context, id string) (*models.User, error) {
+	return r.UsersRepo.GetUserByID(id)
+}
+
 func (r *queryResolver) Meetups(ctx context.Context) ([]*models.Meetup, error) {
 	return r.MeetupsRepo.GetMeetups()
 }
