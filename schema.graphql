@@ -23,8 +23,12 @@ input UpdateMeetup {
   description: String
 }
 
+input MeetupFilter {
+  name: String
+}
+
 type Query {
-  meetups: [Meetup!]!
+  meetups(filter: MeetupFilter, limit: Int = 10, offset: Int = 0): [Meetup!]!
   user(id: ID!): User!
 }
 

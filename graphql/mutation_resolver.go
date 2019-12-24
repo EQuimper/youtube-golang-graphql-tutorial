@@ -28,7 +28,7 @@ func (m *mutationResolver) DeleteMeetup(ctx context.Context, id string) (bool, e
 	return true, nil
 }
 
-func (m *mutationResolver) UpdateMeetup(ctx context.Context, id string, input UpdateMeetup) (*models.Meetup, error) {
+func (m *mutationResolver) UpdateMeetup(ctx context.Context, id string, input models.UpdateMeetup) (*models.Meetup, error) {
 	meetup, err := m.MeetupsRepo.GetByID(id)
 	if err != nil || meetup == nil {
 		return nil, errors.New("meetup not exist")
@@ -64,7 +64,7 @@ func (m *mutationResolver) UpdateMeetup(ctx context.Context, id string, input Up
 	return meetup, nil
 }
 
-func (m *mutationResolver) CreateMeetup(ctx context.Context, input NewMeetup) (*models.Meetup, error) {
+func (m *mutationResolver) CreateMeetup(ctx context.Context, input models.NewMeetup) (*models.Meetup, error) {
 	if len(input.Name) < 3 {
 		return nil, errors.New("name not long enough")
 	}
