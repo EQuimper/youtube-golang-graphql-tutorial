@@ -6,9 +6,13 @@ import (
 	"os"
 
 	"github.com/99designs/gqlgen/handler"
+	"github.com/go-chi/chi"
+	"github.com/go-chi/chi/middleware"
 	"github.com/go-pg/pg/v9"
+	"github.com/rs/cors"
 
 	"github.com/equimper/meetmeup/graphql"
+	customMiddleware "github.com/equimper/meetmeup/middleware"
 	"github.com/equimper/meetmeup/postgres"
 )
 
@@ -30,9 +34,22 @@ func main() {
 		port = defaultPort
 	}
 
+	userRepo := postgres.UsersRepo{DB: DB}
+
+	router := chi.NewRouter()
+
+	router.Use(cors.New(cors.Options{
+		AllowedOrigins:   []string{"http://localhost:8000"},
+		AllowCredentials: true,
+		Debug:            true,
+	}).Handler)
+	router.Use(middleware.RequestID)
+	router.Use(middleware.Logger)
+	router.Use(customMiddleware.AuthMiddleware(userRepo))
+
 	c := graphql.Config{Resolvers: &graphql.Resolver{
 		MeetupsRepo: postgres.MeetupsRepo{DB: DB},
-		UsersRepo:   postgres.UsersRepo{DB: DB},
+		UsersRepo:   userRepo,
 	}}
 
 	queryHandler := handler.GraphQL(graphql.NewExecutableSchema(c))
