@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"log"
 
 	"github.com/equimper/meetmeup/models"
 )
@@ -13,6 +14,61 @@ func (r *Resolver) Mutation() MutationResolver {
 }
 
 type mutationResolver struct{ *Resolver }
+
+func (m *mutationResolver) Register(ctx context.Context, input models.RegisterInput) (*models.AuthResponse, error) {
+	_, err := m.UsersRepo.GetUserByEmail(input.Email)
+	if err == nil {
+		return nil, errors.New("email already in used")
+	}
+
+	_, err = m.UsersRepo.GetUserByUsername(input.Username)
+	if err == nil {
+		return nil, errors.New("username already in used")
+	}
+
+	user := &models.User{
+		Username:  input.Username,
+		Email:     input.Email,
+		FirstName: input.FirstName,
+		LastName:  input.LastName,
+	}
+
+	err = user.HashPassword(input.Password)
+	if err != nil {
+		log.Printf("error while hashing password: %v", err)
+		return nil, errors.New("something went wrong")
+	}
+
+	// TODO: create verification code
+
+	tx, err := m.UsersRepo.DB.Begin()
+	if err != nil {
+		log.Printf("error creating a transaction: %v", err)
+		return nil, errors.New("something went wrong")
+	}
+	defer tx.Rollback()
+
+	if _, err := m.UsersRepo.CreateUser(tx, user); err != nil {
+		log.Printf("error creating a user: %v", err)
+		return nil, err
+	}
+
+	if err := tx.Commit(); err != nil {
+		log.Printf("error while commiting: %v", err)
+		return nil, err
+	}
+
+	token, err := user.GenToken()
+	if err != nil {
+		log.Printf("error while generating the token: %v", err)
+		return nil, errors.New("something went wrong")
+	}
+
+	return &models.AuthResponse{
+		AuthToken: token,
+		User:      user,
+	}, nil
+}
 
 func (m *mutationResolver) DeleteMeetup(ctx context.Context, id string) (bool, error) {
 	meetup, err := m.MeetupsRepo.GetByID(id)

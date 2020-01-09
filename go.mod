@@ -10,4 +10,5 @@ require (
 	github.com/pkg/errors v0.8.1
 	github.com/rs/cors v1.7.0 // indirect
 	github.com/vektah/gqlparser v1.2.0
+	golang.org/x/crypto v0.0.0-20191206172530-e9b2fee46413
 )
