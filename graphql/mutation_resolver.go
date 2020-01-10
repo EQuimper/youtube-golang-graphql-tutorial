@@ -6,7 +6,13 @@ import (
 	"fmt"
 	"log"
 
+	"github.com/equimper/meetmeup/middleware"
 	"github.com/equimper/meetmeup/models"
+)
+
+var (
+	ErrBadCredentials  = errors.New("email/password combination don't work")
+	ErrUnauthenticated = errors.New("unauthenticated")
 )
 
 func (r *Resolver) Mutation() MutationResolver {
@@ -14,6 +20,28 @@ func (r *Resolver) Mutation() MutationResolver {
 }
 
 type mutationResolver struct{ *Resolver }
+
+func (m *mutationResolver) Login(ctx context.Context, input models.LoginInput) (*models.AuthResponse, error) {
+	user, err := m.UsersRepo.GetUserByEmail(input.Email)
+	if err != nil {
+		return nil, ErrBadCredentials
+	}
+
+	err = user.ComparePassword(input.Password)
+	if err != nil {
+		return nil, ErrBadCredentials
+	}
+
+	token, err := user.GenToken()
+	if err != nil {
+		return nil, errors.New("something went wrong")
+	}
+
+	return &models.AuthResponse{
+		AuthToken: token,
+		User:      user,
+	}, nil
+}
 
 func (m *mutationResolver) Register(ctx context.Context, input models.RegisterInput) (*models.AuthResponse, error) {
 	_, err := m.UsersRepo.GetUserByEmail(input.Email)
@@ -121,6 +149,11 @@ func (m *mutationResolver) UpdateMeetup(ctx context.Context, id string, input mo
 }
 
 func (m *mutationResolver) CreateMeetup(ctx context.Context, input models.NewMeetup) (*models.Meetup, error) {
+	currentUser, err := middleware.GetCurrentUserFromCTX(ctx)
+	if err != nil {
+		return nil, ErrUnauthenticated
+	}
+
 	if len(input.Name) < 3 {
 		return nil, errors.New("name not long enough")
 	}
@@ -132,7 +165,7 @@ func (m *mutationResolver) CreateMeetup(ctx context.Context, input models.NewMee
 	meetup := &models.Meetup{
 		Name:        input.Name,
 		Description: input.Description,
-		UserID:      "1",
+		UserID:      currentUser.ID,
 	}
 
 	return m.MeetupsRepo.CreateMeetup(meetup)
