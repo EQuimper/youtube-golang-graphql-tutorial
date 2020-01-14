@@ -2,11 +2,8 @@
 
 package graphql
 
-import (
-	"github.com/equimper/meetmeup/postgres"
-)
+import "github.com/equimper/meetmeup/domain"
 
 type Resolver struct {
-	MeetupsRepo postgres.MeetupsRepo
-	UsersRepo   postgres.UsersRepo
+	Domain *domain.Domain
 }

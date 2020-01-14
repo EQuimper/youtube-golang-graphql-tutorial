@@ -13,5 +13,5 @@ func (r *Resolver) User() UserResolver {
 }
 
 func (u *userResolver) Meetups(ctx context.Context, obj *models.User) ([]*models.Meetup, error) {
-	return u.MeetupsRepo.GetMeetupsForUser(obj)
+	return u.Domain.MeetupsRepo.GetMeetupsForUser(obj)
 }

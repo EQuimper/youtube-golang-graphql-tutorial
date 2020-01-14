@@ -11,6 +11,7 @@ import (
 	"github.com/go-pg/pg/v9"
 	"github.com/rs/cors"
 
+	"github.com/equimper/meetmeup/domain"
 	"github.com/equimper/meetmeup/graphql"
 	customMiddleware "github.com/equimper/meetmeup/middleware"
 	"github.com/equimper/meetmeup/postgres"
@@ -47,10 +48,9 @@ func main() {
 	router.Use(middleware.Logger)
 	router.Use(customMiddleware.AuthMiddleware(userRepo))
 
-	c := graphql.Config{Resolvers: &graphql.Resolver{
-		MeetupsRepo: postgres.MeetupsRepo{DB: DB},
-		UsersRepo:   userRepo,
-	}}
+	d := domain.NewDomain(userRepo, postgres.MeetupsRepo{DB: DB})
+
+	c := graphql.Config{Resolvers: &graphql.Resolver{Domain: d}}
 
 	queryHandler := handler.GraphQL(graphql.NewExecutableSchema(c))
 
