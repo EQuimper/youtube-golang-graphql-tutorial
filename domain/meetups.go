@@ -10,9 +10,18 @@ import (
 )
 
 func (d *Domain) DeleteMeetup(ctx context.Context, id string) (bool, error) {
+	currentUser, err := middleware.GetCurrentUserFromCTX(ctx)
+	if err != nil {
+		return false, ErrUnauthenticated
+	}
+
 	meetup, err := d.MeetupsRepo.GetByID(id)
 	if err != nil || meetup == nil {
 		return false, errors.New("meetup not exist")
+	}
+
+	if !meetup.IsOwner(currentUser) {
+		return false, ErrForbidden
 	}
 
 	err = d.MeetupsRepo.Delete(meetup)
@@ -24,9 +33,18 @@ func (d *Domain) DeleteMeetup(ctx context.Context, id string) (bool, error) {
 }
 
 func (d *Domain) UpdateMeetup(ctx context.Context, id string, input models.UpdateMeetup) (*models.Meetup, error) {
+	currentUser, err := middleware.GetCurrentUserFromCTX(ctx)
+	if err != nil {
+		return nil, ErrUnauthenticated
+	}
+
 	meetup, err := d.MeetupsRepo.GetByID(id)
 	if err != nil || meetup == nil {
 		return nil, errors.New("meetup not exist")
+	}
+
+	if !meetup.IsOwner(currentUser) {
+		return nil, ErrForbidden
 	}
 
 	didUpdate := false

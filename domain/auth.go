@@ -8,11 +8,6 @@ import (
 	"github.com/equimper/meetmeup/models"
 )
 
-var (
-	ErrBadCredentials  = errors.New("email/password combination don't work")
-	ErrUnauthenticated = errors.New("unauthenticated")
-)
-
 func (d *Domain) Login(ctx context.Context, input models.LoginInput) (*models.AuthResponse, error) {
 	user, err := d.UsersRepo.GetUserByEmail(input.Email)
 	if err != nil {
